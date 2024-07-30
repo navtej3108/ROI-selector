@@ -3,6 +3,7 @@ import cv2
 import numpy as np
 from PIL import Image
 import pandas as pd
+import matplotlib.pyplot as plt
 
 # Load the image using OpenCV and convert it to RGB format
 def load_image(image_path):
@@ -14,6 +15,11 @@ def load_image(image_path):
 def save_to_excel(data, filename='coordinates.xlsx'):
     df = pd.DataFrame(data)
     df.to_excel(filename, index=False)
+
+def crop_image(image, roi):
+    x, y, w, h = roi
+    cropped_image = image[y:y+h, x:x+w]
+    return cropped_image, (x, y, w, h)
 
 def main():
     st.title("ROI Selector")
@@ -47,15 +53,16 @@ def main():
 
         with col2:
             roi_name = st.text_input("ROI Name")
+            roi_code = st.text_input("ROI Code")
 
             # Button to add the rectangle
             if st.button("Add ROI"):
-                st.session_state['rects'].append((x, y, w, h, roi_name))
+                st.session_state['rects'].append((x, y, w, h, roi_name, roi_code))
 
         # Draw rectangles
         for rect in st.session_state['rects']:
             cv2.rectangle(img_rgb, (int(rect[0]), int(rect[1])), (int(rect[0] + rect[2]), int(rect[1] + rect[3])), (0, 255, 0), 2)
-            st.write(f"ROI Name: {rect[4]}, Coordinates: ({rect[0]}, {rect[1]}, {rect[2]}, {rect[3]})")
+            st.write(f"ROI Name: {rect[4]}, Code: {rect[5]}, Coordinates: ({rect[0]}, {rect[1]}, {rect[2]}, {rect[3]})")
 
         # Update image with rectangles
         st.image(img_rgb, channels="RGB")
@@ -63,7 +70,7 @@ def main():
         # Save ROI data to an Excel file
         if st.button("Save ROIs to Excel"):
             roi_data = [
-                {"ROI": f"ROI {i+1}", "Name": rect[4], "X": rect[0], "Y": rect[1], "Width": rect[2], "Height": rect[3]}
+                {"ROI": f"ROI {i+1}", "Name": rect[4], "Code": rect[5], "X": rect[0], "Y": rect[1], "Width": rect[2], "Height": rect[3]}
                 for i, rect in enumerate(st.session_state['rects'])
             ]
             save_to_excel(roi_data)
