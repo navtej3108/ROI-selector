@@ -1,7 +1,8 @@
 import streamlit as st
-import pandas as pd
 from PIL import Image
 import io
+import numpy as np
+import pandas as pd
 from streamlit_drawable_canvas import st_canvas
 
 def save_coordinates_to_excel(all_coordinates):
@@ -41,21 +42,22 @@ def main():
 
     uploaded_file = st.file_uploader("Choose an image file", type=["png", "jpg", "jpeg"])
     if uploaded_file is not None:
-        # Open the image using Pillow
+        # Open and display the image with Pillow
         img_pil = Image.open(uploaded_file)
+        img_array = np.array(img_pil)
 
         st.write("Draw rectangles on the image to select ROIs.")
-        
         st.image(img_pil, caption='Uploaded Image', use_column_width=True)  # Display the image
 
+        # Use the image as a background for the canvas
         canvas_result = st_canvas(
             fill_color="rgba(255, 0, 0, 0.3)", 
             stroke_width=2,
             stroke_color="#0000FF",
             background_image=img_pil,
             update_streamlit=True,
-            height=img_pil.height,
-            width=img_pil.width,
+            height=img_array.shape[0],
+            width=img_array.shape[1],
             drawing_mode="rect",
             key="canvas"
         )
