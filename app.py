@@ -1,8 +1,8 @@
 import streamlit as st
-from PIL import Image
-import io
 import numpy as np
 import pandas as pd
+from PIL import Image
+import io
 from streamlit_drawable_canvas import st_canvas
 
 def save_coordinates_to_excel(all_coordinates):
@@ -56,8 +56,8 @@ def main():
             stroke_color="#0000FF",
             background_image=img_pil,
             update_streamlit=True,
-            height=img_array.shape[0],
-            width=img_array.shape[1],
+            height=img_pil.height,
+            width=img_pil.width,
             drawing_mode="rect",
             key="canvas"
         )
