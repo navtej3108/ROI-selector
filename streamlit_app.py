@@ -21,14 +21,7 @@ def main():
         img = cv2.imdecode(file_bytes, 1)
         img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
-        # Display the image with rectangles
-        st.image(img_rgb, channels="RGB")
-
-        # Initialize session state for storing rectangles
-        if 'rects' not in st.session_state:
-            st.session_state['rects'] = []
-
-        # Create a canvas for drawing rectangles
+        # Display the image and let the user draw rectangles
         st.write("Draw rectangles on the image to select ROIs.")
         canvas_result = st_canvas(
             fill_color="rgba(255, 0, 0, 0.3)",  # Color for rectangles
@@ -42,7 +35,11 @@ def main():
             key="canvas"
         )
 
-        # Capture drawn rectangles from canvas
+        # Create a list to hold all ROI data
+        if 'rects' not in st.session_state:
+            st.session_state['rects'] = []
+
+        # Capture drawn rectangles from the canvas
         if canvas_result.json_data is not None:
             for obj in canvas_result.json_data["objects"]:
                 if obj["type"] == "rect":
@@ -50,18 +47,39 @@ def main():
                     top = obj["top"]
                     width = obj["width"]
                     height = obj["height"]
-                    roi = (left, top, width, height)
-                    if roi not in st.session_state['rects']:
-                        st.session_state['rects'].append(roi)
+                    if (left, top, width, height) not in st.session_state['rects']:
+                        st.session_state['rects'].append((left, top, width, height, "", ""))
 
-        # Display the coordinates of the drawn rectangles
+        # User input for coordinates and details
+        col1, col2 = st.columns(2)
+
+        with col1:
+            x = st.number_input("X coordinate", min_value=0, max_value=img.shape[1], value=0)
+            y = st.number_input("Y coordinate", min_value=0, max_value=img.shape[0], value=0)
+            w = st.number_input("Width", min_value=0, max_value=img.shape[1] - x, value=100)
+            h = st.number_input("Height", min_value=0, max_value=img.shape[0] - y, value=100)
+
+        with col2:
+            roi_name = st.text_input("ROI Name")
+            roi_code = st.text_input("ROI Code")
+
+            # Button to add the rectangle
+            if st.button("Add ROI"):
+                st.session_state['rects'].append((x, y, w, h, roi_name, roi_code))
+
+        # Draw rectangles on the image
+        img_with_rects = img_rgb.copy()  # Copy image to avoid modifying the original
         for rect in st.session_state['rects']:
-            st.write(f"Coordinates: ({rect[0]}, {rect[1]}, {rect[2]}, {rect[3]})")
+            cv2.rectangle(img_with_rects, (int(rect[0]), int(rect[1])), (int(rect[0] + rect[2]), int(rect[1] + rect[3])), (0, 255, 0), 2)
+            st.write(f"ROI Name: {rect[4]}, Code: {rect[5]}, Coordinates: ({rect[0]}, {rect[1]}, {rect[2]}, {rect[3]})")
+
+        # Display updated image with rectangles
+        st.image(img_with_rects, channels="RGB")
 
         # Save ROI data to an Excel file
         if st.button("Save ROIs to Excel"):
             roi_data = [
-                {"ROI": f"ROI {i+1}", "X": rect[0], "Y": rect[1], "Width": rect[2], "Height": rect[3]}
+                {"ROI": f"ROI {i+1}", "Name": rect[4], "Code": rect[5], "X": rect[0], "Y": rect[1], "Width": rect[2], "Height": rect[3]}
                 for i, rect in enumerate(st.session_state['rects'])
             ]
             save_to_excel(roi_data)
