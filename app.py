@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 from PIL import Image
 import io
+import cv2
 from streamlit_drawable_canvas import st_canvas
 
 def save_coordinates_to_excel(all_coordinates):
@@ -42,12 +43,18 @@ def main():
 
     uploaded_file = st.file_uploader("Choose an image file", type=["png", "jpg", "jpeg"])
     if uploaded_file is not None:
-        # Open and process the image with Pillow
-        img_pil = Image.open(uploaded_file)
-        img_array = np.array(img_pil)
+        file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
+        img = cv2.imdecode(file_bytes, 1)
+        img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        img_pil = Image.fromarray(img_rgb)
 
-        # Display the image in Streamlit
+        # Display the image to determine its size
         st.image(img_pil, caption='Uploaded Image', use_column_width=True)  
+
+        # Calculate the dimensions and scaling
+        img_width, img_height = img_pil.size
+        st_canvas_width = min(img_width, 800)  # Limit canvas width
+        st_canvas_height = min(img_height, 600)  # Limit canvas height
 
         # Create a drawable canvas with the image as the background
         canvas_result = st_canvas(
@@ -56,8 +63,8 @@ def main():
             stroke_color="#0000FF",
             background_image=img_pil,
             update_streamlit=True,
-            height=img_pil.height,
-            width=img_pil.width,
+            height=st_canvas_height,
+            width=st_canvas_width,
             drawing_mode="rect",
             key="canvas"
         )
@@ -79,27 +86,25 @@ def main():
             st.session_state['rects'] = new_rects
 
         if len(st.session_state['rects']) > 0:
+            if len(st.session_state['roi_names']) < len(st.session_state['rects']):
+                st.session_state['roi_names'].extend([""] * (len(st.session_state['rects']) - len(st.session_state['roi_names'])))
+            if len(st.session_state['roi_codes']) < len(st.session_state['rects']):
+                st.session_state['roi_codes'].extend([""] * (len(st.session_state['rects']) - len(st.session_state['roi_codes'])))
+                
             for i, rect in enumerate(st.session_state['rects']):
                 x, y, w, h = rect
                 
                 with st.form(key=f'roi_form_{i}'):
                     col1, col2 = st.columns([1, 2])
                     with col1:
-                        name = st.text_input(f"ROI {i+1} Name", value=st.session_state['roi_names'][i] if i < len(st.session_state['roi_names']) else "")
+                        name = st.text_input(f"ROI {i+1} Name", value=st.session_state['roi_names'][i])
                     with col2:
-                        code = st.text_input(f"ROI {i+1} Code", value=st.session_state['roi_codes'][i] if i < len(st.session_state['roi_codes']) else "")
+                        code = st.text_input(f"ROI {i+1} Code", value=st.session_state['roi_codes'][i])
                     submit_button = st.form_submit_button("Update ROI")
 
                     if submit_button:
-                        if i >= len(st.session_state['roi_names']):
-                            st.session_state['roi_names'].append(name)
-                        else:
-                            st.session_state['roi_names'][i] = name
-                        
-                        if i >= len(st.session_state['roi_codes']):
-                            st.session_state['roi_codes'].append(code)
-                        else:
-                            st.session_state['roi_codes'][i] = code
+                        st.session_state['roi_names'][i] = name
+                        st.session_state['roi_codes'][i] = code
 
             if st.button("Save ROIs to Excel"):
                 roi_data = [
