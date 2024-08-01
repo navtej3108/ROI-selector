@@ -2,6 +2,7 @@ import streamlit as st
 import cv2
 import numpy as np
 import pandas as pd
+from PIL import Image  # Import Image from PIL
 from streamlit_drawable_canvas import st_canvas
 
 # Function to save coordinates and names to an Excel file
