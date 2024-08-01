@@ -45,10 +45,16 @@ def main():
     if uploaded_file is not None:
         file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
         img = cv2.imdecode(file_bytes, 1)
+        
+        if img is None:
+            st.error("Failed to decode image.")
+            return
+        
         img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         img_pil = Image.fromarray(img_rgb)
 
         st.write("Draw rectangles on the image to select ROIs.")
+        st.image(img_pil, caption='Uploaded Image', use_column_width=True)  # Display the image
 
         canvas_result = st_canvas(
             fill_color="rgba(255, 0, 0, 0.3)", 
