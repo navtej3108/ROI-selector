@@ -1,5 +1,7 @@
 streamlit==1.37.0
 opencv-python==4.10.0.84
+opencv-python-headless
+opencv-contrib-python
 numpy==1.26.4
 pillow==10.2.0
 pandas==2.2.2
