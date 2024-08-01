@@ -48,25 +48,24 @@ def main():
         img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         img_pil = Image.fromarray(img_rgb)
 
-        # Display the image to determine its size
-        st.image(img_pil, caption='Uploaded Image', use_column_width=True)  
+        st.write("Draw rectangles on the image to select ROIs.")
 
-        # Calculate the dimensions and scaling
-        img_width, img_height = img_pil.size
-        st_canvas_width = min(img_width, 800)  # Limit canvas width
-        st_canvas_height = min(img_height, 600)  # Limit canvas height
-
-        # Create a drawable canvas with the image as the background
+        # Get image dimensions
+        img_height, img_width, _ = img.shape
+        
+        # Create a canvas with scrollbars
         canvas_result = st_canvas(
             fill_color="rgba(255, 0, 0, 0.3)", 
             stroke_width=2,
             stroke_color="#0000FF",
             background_image=img_pil,
             update_streamlit=True,
-            height=st_canvas_height,
-            width=st_canvas_width,
+            height=img_height,
+            width=img_width,
             drawing_mode="rect",
-            key="canvas"
+            key="canvas",
+            zoom=1.0,  # Adjust zoom if needed
+            scrollbars=True
         )
 
         if 'rects' not in st.session_state:
