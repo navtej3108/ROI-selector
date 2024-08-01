@@ -1,92 +1,120 @@
 import streamlit as st
-import cv2
 import numpy as np
 import pandas as pd
 from PIL import Image
-import matplotlib.pyplot as plt
+import io
+import cv2
+from streamlit_drawable_canvas import st_canvas
 
-# Function to load the image using PIL and convert it to RGB format
-def load_image(image_file):
-    img = Image.open(image_file)
-    img = np.array(img)
-    img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    return img_rgb
-
-# Function to crop the image based on ROI
-def crop_image(image, roi):
-    x, y, w, h = roi
-    cropped_image = image[y:y+h, x:x+w]
-    return cropped_image
-
-# Function to save coordinates and names to an Excel file
-def save_coordinates_to_excel(all_coordinates, filename):
+def save_coordinates_to_excel(all_coordinates):
     data = {
         'ROI': [],
         'Name': [],
         'Code': [],
-        'Coordinate': [],
-        'X': [],
-        'Y': []
+        'Top-Left X': [],
+        'Top-Left Y': [],
+        'Bottom-Right X': [],
+        'Bottom-Right Y': []
     }
+    
     for i, (coordinates, name, code) in enumerate(all_coordinates):
+        x, y, w, h = coordinates
         roi_label = f'ROI {i+1}'
-        data['ROI'].extend([roi_label] * 4)
-        data['Name'].extend([name] * 4)
-        data['Code'].extend([code] * 4)
-        data['Coordinate'].extend(['Top-left', 'Top-right', 'Bottom-left', 'Bottom-right'])
-        data['X'].extend([coordinates[0], coordinates[0] + coordinates[2], coordinates[0], coordinates[0] + coordinates[2]])
-        data['Y'].extend([coordinates[1], coordinates[1], coordinates[1] + coordinates[3], coordinates[1] + coordinates[3]])
+        
+        data['ROI'].append(roi_label)
+        data['Name'].append(name)
+        data['Code'].append(code)
+        data['Top-Left X'].append(x)
+        data['Top-Left Y'].append(y)
+        data['Bottom-Right X'].append(x + w)
+        data['Bottom-Right Y'].append(y + h)
     
     df = pd.DataFrame(data)
-    df.to_excel(filename, index=False)
+    
+    # Save to an in-memory buffer
+    buffer = io.BytesIO()
+    df.to_excel(buffer, index=False)
+    buffer.seek(0)
+    
+    return buffer
 
 def main():
-    st.title("ROI Selector")
+    st.title("ROI Selector with Drawable Canvas")
 
-    # Upload image file
     uploaded_file = st.file_uploader("Choose an image file", type=["png", "jpg", "jpeg"])
     if uploaded_file is not None:
-        # Load and display the image
-        img_rgb = load_image(uploaded_file)
-        st.image(img_rgb, channels="RGB", caption="Uploaded Image")
+        file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
+        img = cv2.imdecode(file_bytes, 1)
+        img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        img_pil = Image.fromarray(img_rgb)
 
-        # Initialize variables
+        st.write("Draw rectangles on the image to select ROIs.")
+
+        canvas_result = st_canvas(
+            fill_color="rgba(255, 0, 0, 0.3)", 
+            stroke_width=2,
+            stroke_color="#0000FF",
+            background_image=img_pil,
+            update_streamlit=True,
+            height=img_rgb.shape[0],
+            width=img_rgb.shape[1],
+            drawing_mode="rect",
+            key="canvas"
+        )
+
         if 'rects' not in st.session_state:
             st.session_state['rects'] = []
-        
-        # ROI Selection
-        st.write("Enter the coordinates and details for ROIs.")
+            st.session_state['roi_names'] = []
+            st.session_state['roi_codes'] = []
 
-        # User input for drawing rectangles
-        with st.form(key='roi_form'):
-            x = st.number_input("X coordinate", min_value=0, max_value=img_rgb.shape[1], value=0)
-            y = st.number_input("Y coordinate", min_value=0, max_value=img_rgb.shape[0], value=0)
-            w = st.number_input("Width", min_value=0, max_value=img_rgb.shape[1] - x, value=100)
-            h = st.number_input("Height", min_value=0, max_value=img_rgb.shape[0] - y, value=100)
-            roi_name = st.text_input("ROI Name")
-            roi_code = st.text_input("ROI Code")
+        if canvas_result.json_data is not None:
+            new_rects = []
+            for obj in canvas_result.json_data["objects"]:
+                if obj["type"] == "rect":
+                    left = obj["left"]
+                    top = obj["top"]
+                    width = obj["width"]
+                    height = obj["height"]
+                    new_rects.append((left, top, width, height))
+            st.session_state['rects'] = new_rects
 
-            # Submit button for adding the ROI
-            if st.form_submit_button("Add ROI"):
-                st.session_state['rects'].append((x, y, w, h, roi_name, roi_code))
+        if len(st.session_state['rects']) > 0:
+            if len(st.session_state['roi_names']) < len(st.session_state['rects']):
+                st.session_state['roi_names'].extend([""] * (len(st.session_state['rects']) - len(st.session_state['roi_names'])))
+            if len(st.session_state['roi_codes']) < len(st.session_state['rects']):
+                st.session_state['roi_codes'].extend([""] * (len(st.session_state['rects']) - len(st.session_state['roi_codes'])))
+                
+            for i, rect in enumerate(st.session_state['rects']):
+                x, y, w, h = rect
+                
+                with st.form(key=f'roi_form_{i}'):
+                    col1, col2 = st.columns([1, 2])
+                    with col1:
+                        name = st.text_input(f"ROI {i+1} Name", value=st.session_state['roi_names'][i])
+                    with col2:
+                        code = st.text_input(f"ROI {i+1} Code", value=st.session_state['roi_codes'][i])
+                    submit_button = st.form_submit_button("Update ROI")
 
-        # Draw rectangles on the image
-        img_with_rects = img_rgb.copy()
-        for rect in st.session_state['rects']:
-            cv2.rectangle(img_with_rects, (rect[0], rect[1]), (rect[0] + rect[2], rect[1] + rect[3]), (0, 255, 0), 2)
-            st.write(f"ROI Name: {rect[4]}, Code: {rect[5]}, Coordinates: ({rect[0]}, {rect[1]}, {rect[2]}, {rect[3]})")
+                    if submit_button:
+                        st.session_state['roi_names'][i] = name
+                        st.session_state['roi_codes'][i] = code
 
-        # Display image with drawn rectangles
-        st.image(img_with_rects, channels="RGB", caption="Image with ROIs")
-
-        # Save ROI data to Excel
-        if st.button("Save ROIs to Excel"):
-            roi_data = [
-                {"ROI": f"ROI {i+1}", "Name": rect[4], "Code": rect[5], "X": rect[0], "Y": rect[1], "Width": rect[2], "Height": rect[3]}
-                for i, rect in enumerate(st.session_state['rects'])
-            ]
-            save_coordinates_to_excel(roi_data, 'ROI-coordinates.xlsx')
-            st.success("ROI data saved to Excel!")
+            if st.button("Save ROIs to Excel"):
+                roi_data = [
+                    (rect, st.session_state['roi_names'][i], st.session_state['roi_codes'][i])
+                    for i, rect in enumerate(st.session_state['rects'])
+                    if st.session_state['roi_names'][i] and st.session_state['roi_codes'][i]
+                ]
+                if roi_data:
+                    buffer = save_coordinates_to_excel(roi_data)
+                    st.download_button(
+                        label="Download Excel file",
+                        data=buffer,
+                        file_name="ROI-coordinates.xlsx",
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                    )
+                else:
+                    st.warning("No valid ROIs to save.")
 
 if __name__ == "__main__":
     main()
