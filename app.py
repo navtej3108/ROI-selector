@@ -42,14 +42,14 @@ def main():
 
     uploaded_file = st.file_uploader("Choose an image file", type=["png", "jpg", "jpeg"])
     if uploaded_file is not None:
-        # Open and display the image with Pillow
+        # Open and process the image with Pillow
         img_pil = Image.open(uploaded_file)
         img_array = np.array(img_pil)
 
-        st.write("Draw rectangles on the image to select ROIs.")
-        st.image(img_pil, caption='Uploaded Image', use_column_width=True)  # Display the image
+        # Display the image in Streamlit
+        st.image(img_pil, caption='Uploaded Image', use_column_width=True)  
 
-        # Use the image as a background for the canvas
+        # Create a drawable canvas with the image as the background
         canvas_result = st_canvas(
             fill_color="rgba(255, 0, 0, 0.3)", 
             stroke_width=2,
