@@ -52,7 +52,7 @@ def main():
 
         # Get image dimensions
         img_height, img_width, _ = img.shape
-        
+
         # Create a canvas with scrollbars
         canvas_result = st_canvas(
             fill_color="rgba(255, 0, 0, 0.3)", 
@@ -63,9 +63,7 @@ def main():
             height=img_height,
             width=img_width,
             drawing_mode="rect",
-            key="canvas",
-            zoom=1.0,  # Adjust zoom if needed
-            scrollbars=True
+            key="canvas"
         )
 
         if 'rects' not in st.session_state:
