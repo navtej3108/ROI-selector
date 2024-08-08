@@ -48,7 +48,10 @@ def main():
         img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         img_pil = Image.fromarray(img_rgb)
 
-        st.write("Draw rectangles on the image to select ROIs.")
+        st.write("Image loaded successfully.")
+
+        # Display the image
+        st.image(img_pil, caption='Uploaded Image', use_column_width=True)
 
         # Get image dimensions
         img_height, img_width, _ = img.shape
