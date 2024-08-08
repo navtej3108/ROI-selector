@@ -48,14 +48,10 @@ def main():
         img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         img_pil = Image.fromarray(img_rgb)
 
-        st.write("Image loaded successfully.")
-        st.image(img_pil, caption='Uploaded Image', use_column_width=True)
-
         st.write("Draw rectangles on the image to select ROIs.")
 
         # Get image dimensions
         img_height, img_width, _ = img.shape
-        st.write(f"Image dimensions: {img_width}x{img_height}")
 
         # Create a canvas
         canvas_result = st_canvas(
