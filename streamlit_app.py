@@ -55,9 +55,10 @@ def main():
         img_width, img_height = img_pil.size
         
         st.write("Image loaded successfully.")
-        
-        # Display the image
         st.image(img_pil, caption='Uploaded Image', use_column_width=True)
+
+        # Display debug information
+        st.write(f"Image dimensions: Width={img_width}, Height={img_height}")
 
         # Create a canvas
         canvas_result = st_canvas(
@@ -71,16 +72,13 @@ def main():
             drawing_mode="rect",
             key="canvas"
         )
-
-        # Debug: Check if canvas result is None
+        
+        # Debug: Check if canvas result is None or has invalid data
         if canvas_result is None:
             st.error("Canvas result is None. Ensure the canvas is correctly initialized.")
+        elif canvas_result.json_data is None:
+            st.error("Canvas JSON data is None. Ensure the canvas is receiving data.")
         
-        if 'rects' not in st.session_state:
-            st.session_state['rects'] = []
-            st.session_state['roi_names'] = []
-            st.session_state['roi_codes'] = []
-
         if canvas_result and canvas_result.json_data:
             new_rects = []
             for obj in canvas_result.json_data["objects"]:
