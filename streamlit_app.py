@@ -43,18 +43,21 @@ def main():
 
     uploaded_file = st.file_uploader("Choose an image file", type=["png", "jpg", "jpeg"])
     if uploaded_file is not None:
+        # Read the image
         file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
         img = cv2.imdecode(file_bytes, 1)
         img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        
+        # Convert to PIL Image
         img_pil = Image.fromarray(img_rgb)
-
+        
+        # Get image dimensions
+        img_width, img_height = img_pil.size
+        
         st.write("Image loaded successfully.")
-
+        
         # Display the image
         st.image(img_pil, caption='Uploaded Image', use_column_width=True)
-
-        # Get image dimensions
-        img_height, img_width, _ = img.shape
 
         # Create a canvas
         canvas_result = st_canvas(
