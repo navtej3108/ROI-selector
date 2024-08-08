@@ -72,12 +72,16 @@ def main():
             key="canvas"
         )
 
+        # Debug: Check if canvas result is None
+        if canvas_result is None:
+            st.error("Canvas result is None. Ensure the canvas is correctly initialized.")
+        
         if 'rects' not in st.session_state:
             st.session_state['rects'] = []
             st.session_state['roi_names'] = []
             st.session_state['roi_codes'] = []
 
-        if canvas_result.json_data is not None:
+        if canvas_result and canvas_result.json_data:
             new_rects = []
             for obj in canvas_result.json_data["objects"]:
                 if obj["type"] == "rect":
