@@ -50,18 +50,14 @@ def main():
 
         st.write("Draw rectangles on the image to select ROIs.")
 
-        # Get image dimensions
-        img_height, img_width, _ = img.shape
-
-        # Create a canvas with scrollbars
         canvas_result = st_canvas(
             fill_color="rgba(255, 0, 0, 0.3)", 
             stroke_width=2,
             stroke_color="#0000FF",
             background_image=img_pil,
             update_streamlit=True,
-            height=img_height,
-            width=img_width,
+            height=img_rgb.shape[0],
+            width=img_rgb.shape[1],
             drawing_mode="rect",
             key="canvas"
         )
