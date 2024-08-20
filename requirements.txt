@@ -1,8 +1,8 @@
-streamlit
-opencv-python
+streamlit==1.37.0
+streamlit-drawable-canvas==0.9.3
+opencv-python==4.10.0.84
 opencv-python-headless
+pillow==10.2.0
 numpy==1.26.4
-pillow
 pandas
 matplotlib
-streamlit-drawable-canvas
