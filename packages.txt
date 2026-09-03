@@ -1,2 +1,0 @@
-cmake
-python3-opencv
